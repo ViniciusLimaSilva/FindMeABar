@@ -4,16 +4,17 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const BarsApp());
 }
 
-/// Emulador Android → 10.0.2.2 | Celular físico → IP da sua máquina
-///const String baseUrl = 'http://10.0.2.2:8000'; ///  emulador
-
-const String baseUrl = 'http://192.168.1.10:8000';
+/// Mude aqui conforme o dispositivo que estiver usando:
+const String baseUrl = 'http://10.0.2.2:8000'; // Para o Emulador (ATIVO)
+/// const String baseUrl = 'http://192.168.1.24:8000'; // Seu IP ATUAL
+/// const String baseUrl = 'http://192.168.1.10:8000'; // IP Antigo
 
 ///  celular
 ///
@@ -419,7 +420,23 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Find me a Bar'),
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/icon.png', height: 32),
+            const SizedBox(width: 8),
+            Text(
+              'Find me a Bar',
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w800,
+                fontSize: 22,
+                letterSpacing: -0.5,
+                color: cs.onSurface,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Filtros',
@@ -455,6 +472,12 @@ class _HomePageState extends State<HomePage> {
             final mapsUrl = it['mapsUrl']?.toString();
             final open = it['openNow'] == true;
 
+            // Ajuste para fotos com caminho relativo e limpeza de caracteres invisíveis (\n, espaços)
+            String? fullPhotoPath = photo?.replaceAll(RegExp(r'\s+'), '');
+            if (fullPhotoPath != null && fullPhotoPath.startsWith('/')) {
+              fullPhotoPath = '$baseUrl$fullPhotoPath';
+            }
+
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: Material(
@@ -466,23 +489,26 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (photo != null)
+                      if (fullPhotoPath != null)
                         ClipRRect(
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(16),
                             bottomLeft: Radius.circular(16),
                           ),
                           child: Image.network(
-                            photo,
+                            fullPhotoPath,
                             width: 120,
                             height: 120,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 120,
-                              height: 120,
-                              color: cs.surfaceVariant,
-                              child: const Icon(Icons.image_not_supported),
-                            ),
+                            errorBuilder: (context, error, stackTrace) {
+                              debugPrint('Erro ao carregar imagem: $error');
+                              return Container(
+                                width: 120,
+                                height: 120,
+                                color: cs.surfaceVariant,
+                                child: const Icon(Icons.image_not_supported),
+                              );
+                            },
                           ),
                         )
                       else
